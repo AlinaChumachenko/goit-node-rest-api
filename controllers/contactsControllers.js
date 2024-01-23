@@ -53,7 +53,7 @@ export const createContact = async (req, res, next) => {
   try {
     const { error } = createContactSchema.validate(req.body);
     if (error) {
-      throw HttpError(400);
+      throw HttpError(400, `Contact with id=${contactId} not found`);
     }
     const newContact = await addContact(req.body);
 
