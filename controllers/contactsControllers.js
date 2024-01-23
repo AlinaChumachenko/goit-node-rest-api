@@ -70,7 +70,7 @@ export const updateContact = async (req, res, next) => {
     }
     const { error } = updateContactSchema.validate(req.body);
     if (error) {
-      throw HttpError(400);
+      throw HttpError(400, `Contact with id=${id} not found`);
     }
     const { id } = req.params;
     const updateContact = await refreshContact(id, req.body);
