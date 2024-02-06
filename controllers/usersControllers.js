@@ -12,6 +12,13 @@ const { SECRET_KEY } = process.env;
 export const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    const { error } = registerSchema.validate(req.body);
+
+    if (error) {
+      throw HttpError(400, error.message);
+    }
+
     const user = await User.findOne({ email });
 
     if (user) {
@@ -35,6 +42,13 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    const { error } = registerSchema.validate(req.body);
+
+    if (error) {
+      throw HttpError(400, error.message);
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
