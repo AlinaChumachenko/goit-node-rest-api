@@ -1,6 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import gravatar from "gravatar";
+import path from "path";
+import { promises as fs } from "fs";
+import Jimp from "jimp";
 
 import { User } from "../modals/users.js";
 import HttpError from "../helpers/HttpError.js";
@@ -8,6 +12,8 @@ import { registerSchema } from "../schemas/usersSchemas.js";
 
 dotenv.config();
 const { SECRET_KEY } = process.env;
+
+const avatarDir = path.resolve("public", "avatars");
 
 export const register = async (req, res, next) => {
   try {
@@ -26,7 +32,13 @@ export const register = async (req, res, next) => {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ ...req.body, password: hashPassword });
+    const avatarURL = gravatar.url(email);
+
+    const newUser = await User.create({
+      ...req.body,
+      password: hashPassword,
+      avatarURL,
+    });
 
     res.status(201).json({
       user: {
@@ -92,6 +104,33 @@ export const logout = async (req, res, next) => {
     const { _id } = req.user;
     await User.findByIdAndUpdate(_id, { token: "" });
     res.status(204).json({ message: "No Content" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    const { _id } = req.user;
+
+    if (!req.file) throw HttpError(400, "missing field avatar");
+
+    const { path: tmpUpload, originalname } = req.file;
+    await Jimp.read(tmpUpload).then((img) =>
+      img.resize(250, 250).write(`${tmpUpload}`)
+    );
+
+    const fileName = `${_id}_${originalname}`;
+    const resultUpload = path.resolve(avatarDir, fileName);
+
+    await fs.rename(tmpUpload, resultUpload);
+
+    const avatarURL = path.join("avatars", fileName);
+    await User.findByIdAndUpdate(_id, { avatarURL });
+
+    res.json({
+      avatarURL,
+    });
   } catch (error) {
     next(error);
   }
