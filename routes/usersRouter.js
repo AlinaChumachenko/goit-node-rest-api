@@ -2,6 +2,7 @@ import express from "express";
 import {
   register,
   verifyEmail,
+  resendverifyEmail,
   login,
   logout,
   getCurrent,
@@ -14,6 +15,7 @@ const usersRouter = express.Router();
 
 usersRouter.post("/register", register);
 usersRouter.get("/verify/:verificationToken", verifyEmail);
+usersRouter.post("/verify", resendverifyEmail);
 usersRouter.post("/login", login);
 usersRouter.get("/current", authenticate, getCurrent);
 usersRouter.post("/logout", authenticate, logout);

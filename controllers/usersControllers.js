@@ -10,7 +10,7 @@ import { nanoid } from "nanoid";
 import { User } from "../modals/users.js";
 import HttpError from "../helpers/HttpError.js";
 import sendEmail from "../helpers/sendEmail.js";
-import { registerSchema } from "../schemas/usersSchemas.js";
+import { registerSchema, emailSchema } from "../schemas/usersSchemas.js";
 
 dotenv.config();
 const { SECRET_KEY, BASE_URL } = process.env;
@@ -47,7 +47,7 @@ export const register = async (req, res, next) => {
     const verifyEmail = {
       to: email,
       subject: "Verify your email",
-      html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${verificationToken}">Click here to verify email</a>`,
+      html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationToken}">Click here to verify email</a>`,
     };
 
     await sendEmail(verifyEmail);
@@ -77,6 +77,39 @@ export const verifyEmail = async (req, res, next) => {
 
     res.json({
       message: "Verification successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendverifyEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      throw HttpError(400, "missing required field email");
+    }
+    const { error } = emailSchema.validate(req.body);
+    if (error) {
+      throw HttpError(400, error.message);
+    }
+
+    const user = await User.findOne({ email });
+
+    if (user.verify) {
+      throw HttpError(400, "Verification has already been passed");
+    }
+
+    const verifyEmail = {
+      to: email,
+      subject: "Verify your email",
+      html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click here to verify email</a>`,
+    };
+
+    await sendEmail(verifyEmail);
+
+    res.json({
+      message: "Verification email sent",
     });
   } catch (error) {
     next(error);
